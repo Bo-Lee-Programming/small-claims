@@ -7,6 +7,10 @@ Paste a claim or a link. Three open-weight models take the stand: the
 evidence from the web, and the **judge** rules. About a minute, a few cents,
 and you get a verdict card you can share.
 
+| Home | Trial | Verdict |
+|---|---|---|
+| ![Home](shots/1-home.jpg) | ![Trial](shots/2-trial.jpg) | ![Verdict](shots/3-verdict.jpg) |
+
 Built for MozFest **Developers Wilding: Online** on the hosted
 [Otari](https://otari.ai) gateway. Hackathon branch: `devs-wilding`.
 
@@ -25,6 +29,14 @@ Built for MozFest **Developers Wilding: Online** on the hosted
 
 Every verdict card has a **court record**: the list of Otari calls behind the
 trial, with the model, the tools and the cost of each.
+
+## Where it stands
+
+<!-- Keep this honest: update it from a live court record before claiming more. -->
+Everything in the table above is wired into the app and covered by offline
+tests. **So far it has only run in demo mode** (an offline stand-in for the
+Otari API, labelled on every screen and card); the screenshots are demo mode.
+It has not yet been run against otari.ai.
 
 ## Run it
 
