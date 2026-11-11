@@ -190,8 +190,11 @@ def main(argv=None):
     ap.add_argument("--daily-trials", type=int, default=3)
     ap.add_argument("--fee-cap", type=float, default=0.05)
     ap.add_argument("--pace", type=float, default=0.7, help="demo mode: seconds per event")
+    ap.add_argument("--used-up", default="", help="visitors who start with no filings left, e.g. alice")
     args = ap.parse_args(argv)
     Handler.court = Court(args.mock, args.daily_trials, args.fee_cap, args.pace)
+    for v in filter(None, args.used_up.split(",")):
+        Handler.court.filed[(clean_visitor(v), date.today().isoformat())] = args.daily_trials
     mode = "DEMO (scripted, no key)" if Handler.court.mock else "LIVE on otari.ai"
     print(f"Small Claims in session at http://localhost:{args.port}  [{mode}]")
     ThreadingHTTPServer(("127.0.0.1", args.port), Handler).serve_forever()
