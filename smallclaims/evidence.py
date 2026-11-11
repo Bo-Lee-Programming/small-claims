@@ -51,9 +51,12 @@ class EvidenceLog:
         return {
             "web fetch": any(e["call"].endswith("/fetch") for e in ok),
             "web search": "web_search" in tool_types,
-            "code execution": any(e["call"].endswith("/code/execute") for e in ok),
+            "code execution": any(e["call"].endswith("/code/execute") for e in ok)
+                              or "code_execution" in tool_types,
             "MCP": "mcp" in tool_types,
-            "guardrails": any("otari-guardrails" in e["headers"] for e in ok),
+            "guardrails": any("otari-guardrails" in e["headers"] for e in ok)
+                          or any(e["headers"].get("otari-error-code") == "guardrail_violation"
+                                 for e in self.entries),
             "routing (policy name served by a real model)": any(
                 e["request"].get("model") and e["response"].get("model")
                 and e["request"]["model"] != e["response"]["model"] for e in ok),

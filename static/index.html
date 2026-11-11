@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small Claims: put any sentence on trial</title>
+<style>
+  :root {
+    --paper: #f7f1e6; --ink: #2a2118; --muted: #7a6c5b; --line: #e2d6c3;
+    --wood: #6b4226; --pros: #b23a2e; --pros-bg: #fbe9e5; --def: #2d5e9e; --def-bg: #e7eef9;
+    --judge: #3b2a1a; --clerk: #4f6b3a; --clerk-bg: #edf3e6; --gold: #c99a2e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .serif { font-family: Georgia, "Times New Roman", serif; }
+  a { color: inherit; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 16px 80px; }
+  .banner { background: #fff4cc; border-bottom: 1px solid #ecd98a; font-size: 14px;
+            text-align: center; padding: 8px 12px; }
+  .banner b { color: #8a5d00; }
+  header { text-align: center; padding: 40px 0 12px; }
+  header .seal { font-size: 40px; }
+  header h1 { margin: 4px 0 0; font-size: 44px; letter-spacing: .5px; }
+  header p { margin: 6px 0 0; color: var(--muted); font-size: 18px; }
+  form { display: flex; gap: 8px; margin: 24px 0 12px; }
+  #claim { flex: 1; font-size: 17px; padding: 14px 16px; border: 2px solid var(--wood);
+           border-radius: 12px; background: #fff; color: var(--ink); min-width: 0; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 12px; }
+  .primary { background: var(--wood); color: #fff; padding: 0 20px; font-weight: 600; }
+  .primary:disabled { opacity: .5; cursor: default; }
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .chip { background: #fff; border: 1px solid var(--line); padding: 8px 12px;
+          border-radius: 999px; font-size: 14px; color: var(--ink); }
+  .chip:hover { border-color: var(--wood); }
+  .how { margin: 28px auto 0; color: var(--muted); font-size: 14px; text-align: center; max-width: 560px; }
+
+  .bench { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 24px 0 8px; }
+  .seat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+          text-align: center; font-size: 13px; }
+  .seat .who { font-weight: 700; font-size: 15px; }
+  .seat .model { color: var(--muted); word-break: break-all; }
+  .seat.pros { border-top: 4px solid var(--pros); }
+  .seat.judge { border-top: 4px solid var(--judge); }
+  .seat.def { border-top: 4px solid var(--def); }
+  .seat.active { box-shadow: 0 0 0 2px var(--gold); }
+  .docket { text-align: center; margin-top: 24px; }
+  .docket .no { color: var(--muted); font-size: 13px; letter-spacing: 1px; }
+  .docket .claim { font-size: 24px; margin: 4px 0; }
+
+  .fee { position: sticky; top: 0; background: var(--paper); padding: 10px 0; z-index: 2; }
+  .fee .row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .bar { height: 10px; background: #eadfcd; border-radius: 99px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--clerk); transition: width .6s; }
+  .bar.warn i { background: var(--gold); } .bar.full i { background: var(--pros); }
+
+  #feed { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+  .msg { border-radius: 14px; padding: 12px 14px; max-width: 88%; animation: up .35s ease; }
+  @keyframes up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .msg .tag { font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+  .msg .tag small { font-weight: 400; text-transform: none; color: var(--muted); letter-spacing: 0; }
+  .msg.pros { background: var(--pros-bg); align-self: flex-start; } .msg.pros .tag { color: var(--pros); }
+  .msg.def { background: var(--def-bg); align-self: flex-end; } .msg.def .tag { color: var(--def); }
+  .msg.judge { background: #fff; border: 1px solid var(--line); align-self: center; }
+  .msg.clerk { background: var(--clerk-bg); align-self: center; } .msg.clerk .tag { color: var(--clerk); }
+  .note { align-self: center; font-size: 14px; color: var(--muted); text-align: center; max-width: 92%;
+          animation: up .35s ease; }
+  .note b { color: var(--ink); }
+  .note.alert { color: var(--pros); }
+  .typing { align-self: center; color: var(--muted); font-size: 14px; font-style: italic; }
+  .ex { display: block; background: #fff; border: 1px solid var(--line); border-radius: 10px;
+        padding: 8px 10px; margin-top: 8px; font-size: 14px; text-decoration: none; position: relative; }
+  .ex .id { font-weight: 700; margin-right: 6px; }
+  .ex .src { color: var(--muted); font-size: 12px; word-break: break-all; }
+  .ex.excluded { opacity: .55; text-decoration: line-through; }
+  .ex .stamp { position: absolute; right: 8px; top: 6px; font-size: 11px; font-weight: 800;
+               padding: 2px 6px; border-radius: 4px; text-decoration: none; display: inline-block; }
+  .stamp.admitted { color: var(--clerk); border: 1.5px solid var(--clerk); }
+  .stamp.excluded { color: var(--pros); border: 1.5px solid var(--pros); }
+  .stamp.unscreened { color: var(--muted); border: 1.5px solid var(--muted); }
+  pre { background: #1f1a14; color: #f3e9d8; border-radius: 10px; padding: 10px; overflow-x: auto;
+        font-size: 13px; margin: 8px 0 0; }
+
+  .card { background: #fffdf8; border: 2px solid var(--wood); border-radius: 18px; padding: 24px;
+          margin-top: 24px; position: relative; overflow: hidden; animation: up .5s ease; }
+  .card .case { color: var(--muted); font-size: 13px; letter-spacing: 1px; }
+  .card .c { font-size: 20px; margin: 6px 0 14px; }
+  .ruling { display: inline-block; font: 800 34px/1 Georgia, serif; letter-spacing: 3px;
+            padding: 8px 16px; border: 4px solid; border-radius: 8px; transform: rotate(-4deg); }
+  .r-TRUE { color: #2f7d3a; } .r-FALSE { color: var(--pros); }
+  .r-MISLEADING { color: #b9741c; } .r-UNPROVEN { color: var(--muted); }
+  .card .headline { font-size: 22px; margin: 18px 0 6px; }
+  .card .opinion { color: #4a3d2f; }
+  .card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin: 18px 0 0; }
+  .card .foot { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted);
+                border-top: 1px dashed var(--line); margin-top: 16px; padding-top: 12px; }
+  .actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .ghost { background: #fff; border: 1px solid var(--wood); color: var(--wood); padding: 10px 16px; }
+  details { margin-top: 14px; font-size: 13px; }
+  details table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  details td { border-top: 1px solid var(--line); padding: 4px; vertical-align: top; word-break: break-word; }
+
+  footer { position: fixed; bottom: 0; left: 0; right: 0; background: #efe5d4; border-top: 1px solid var(--line);
+           font-size: 13px; padding: 8px 16px; display: flex; gap: 12px; justify-content: center;
+           align-items: center; flex-wrap: wrap; }
+  footer select { font: inherit; border-radius: 8px; border: 1px solid var(--line); padding: 2px 6px; }
+  .hidden { display: none !important; }
+  @media (max-width: 560px) {
+    header h1 { font-size: 34px; } form { flex-direction: column; } .primary { padding: 14px; }
+    .bench { gap: 4px; } .seat { padding: 6px; font-size: 11px; } .seat .who { font-size: 13px; }
+    .msg { max-width: 96%; } .docket .claim { font-size: 20px; } .ruling { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+<div id="banner" class="banner hidden"><b>Demo mode.</b> A scripted court: no real models, no Otari calls. Try the three example cases.</div>
+<div class="wrap">
+  <header>
+    <div class="seal">⚖️</div>
+    <h1 class="serif">Small Claims</h1>
+    <p>Put any sentence from the internet on trial.</p>
+  </header>
+
+  <section id="home">
+    <form id="file">
+      <input id="claim" maxlength="500" autocomplete="off" placeholder="Paste a claim or a link…">
+      <button class="primary" id="go">File the case</button>
+    </form>
+    <div class="examples" id="examples"></div>
+    <p class="how">The prosecution argues it's false. The defense argues it's true. Both bring evidence from the web.
+      The judge rules. Three different open-weight models, about a minute, a few cents.</p>
+  </section>
+
+  <section id="trial" class="hidden">
+    <div class="docket"><div class="no serif" id="caseno"></div><div class="claim serif" id="docketClaim"></div></div>
+    <div class="bench">
+      <div class="seat pros" id="seat-prosecution"><div class="who">Prosecution</div><div class="model">says it's false</div></div>
+      <div class="seat judge" id="seat-judge"><div class="who">Judge</div><div class="model"></div></div>
+      <div class="seat def" id="seat-defense"><div class="who">Defense</div><div class="model">says it's true</div></div>
+    </div>
+    <div class="fee">
+      <div class="row"><span>Filing fee</span><span id="feeText">$0.000 of $0.05</span></div>
+      <div class="bar" id="bar"><i></i></div>
+    </div>
+    <div id="feed"></div>
+    <div id="cardSlot"></div>
+  </section>
+</div>
+<footer>
+  <span>Visiting as
+    <select id="visitor"><option value="guest">Guest</option><option value="alice">Alice</option><option value="bob">Bob</option></select></span>
+  <span id="left"></span>
+  <span>Runs on <a href="https://otari.ai" target="_blank" rel="noopener">Otari</a> + open-weight models</span>
+</footer>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+const short = (m) => String(m || "").split(/[/:]/).pop();
+let status = {}, exhibits = {}, typingEl = null;
+
+const visitorSel = $("#visitor");
+visitorSel.value = localStorage.getItem("sc-visitor") || "guest";
+visitorSel.onchange = () => { localStorage.setItem("sc-visitor", visitorSel.value); refresh(); };
+
+async function refresh() {
+  status = await (await fetch(`/api/status?visitor=${visitorSel.value}`)).json();
+  $("#banner").classList.toggle("hidden", status.mode !== "demo");
+  $("#left").textContent = `${status.trials_left} of ${status.daily_trials} trials left today`;
+  $("#seat-judge .model").textContent = short(status.cast.judge);
+  const box = $("#examples");
+  if (!box.children.length) status.examples.forEach((ex) => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.type = "button"; b.textContent = ex;
+    b.onclick = () => { $("#claim").value = ex; file(); };
+    box.appendChild(b);
+  });
+}
+
+$("#file").onsubmit = (e) => { e.preventDefault(); file(); };
+
+function add(html, cls) {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+  const d = document.createElement("div");
+  d.className = cls; d.innerHTML = html;
+  $("#feed").appendChild(d);
+  d.scrollIntoView({behavior: "smooth", block: "nearest"});
+  return d;
+}
+function typing(text) {
+  if (typingEl) typingEl.remove();
+  typingEl = add(esc(text), "typing");
+}
+function seat(role) {
+  document.querySelectorAll(".seat").forEach((s) => s.classList.remove("active"));
+  const id = role === "prosecution" ? "seat-prosecution" : role === "defense" ? "seat-defense" : role === "judge" ? "seat-judge" : "";
+  if (id) $("#" + id).classList.add("active");
+}
+function exhibitHtml(x) {
+  const src = x.url ? `<div class="src">${esc(x.url)}${x.found_by_search ? " · found by Otari search" : ""}</div>` : "";
+  const stamp = x.status && x.status !== "pending" ? `<span class="stamp ${x.status}">${x.status.toUpperCase()}</span>` : "";
+  return `<a class="ex ${x.status === "excluded" ? "excluded" : ""}" id="ex-${x.id}" href="${esc(x.url || "#")}" target="_blank" rel="noopener">
+    ${stamp}<span class="id">${esc(x.id)}</span>${esc(x.title)}<div>${esc(x.point)}</div>${src}</a>`;
+}
+
+const handlers = {
+  docket(e) {
+    $("#caseno").textContent = `CASE No. ${e.case_no}`;
+    $("#docketClaim").textContent = `“${e.claim}”`;
+    $("#seat-prosecution .model").textContent = short(e.cast.prosecution);
+    $("#seat-defense .model").textContent = short(e.cast.defense);
+    $("#seat-judge .model").textContent = short(e.cast.judge);
+    add(`<b>All rise.</b> The court is now in session. Filed by ${esc(e.visitor.replace("visitor-", ""))}.`, "note");
+  },
+  fee(e) {
+    $("#feeText").textContent = `$${e.spent.toFixed(4)} of $${e.cap.toFixed(2)}`;
+    const bar = $("#bar");
+    bar.querySelector("i").style.width = `${e.pct}%`;
+    bar.classList.toggle("warn", e.pct >= 80 && e.pct < 100);
+    bar.classList.toggle("full", e.pct >= 100);
+  },
+  fetched(e) { add(`📄 The court reads the page into the record as <b>Exhibit A</b>: ${esc(e.title)} <small>(${e.chars} characters, via Otari web fetch)</small>`, "note"); },
+  thinking(e) { seat(e.role); typing(`${e.title} is preparing…`); },
+  substitute(e) {
+    add(`🔁 <b>${esc(e.title)}</b>'s first choice, <code>${esc(short(e.failed))}</code>, didn't show up (${esc(e.reason)}). <b>Substitute counsel takes the floor:</b> <code>${esc(short(e.to))}</code>.`, "note alert");
+  },
+  downgrade(e) {
+    add(`💸 The filing fee is at ${e.pct}%. The court appoints a <b>public defender</b> for the defense: <code>${esc(short(e.to))}</code>, a cheaper model.`, "note alert");
+  },
+  argument(e) {
+    seat(e.role);
+    const cls = e.role === "prosecution" ? "pros" : "def";
+    const searched = e.searches && e.searches.length ? `<div class="src" style="margin-top:6px">🔎 searched: ${e.searches.map(esc).join(" · ")}</div>` : "";
+    e.exhibits.forEach((x) => exhibits[x.id] = x);
+    add(`<div class="tag">${esc(e.title)} <small>· ${esc(short(e.model))}</small></div>
+         <div class="serif">${esc(e.text)}</div>${searched}${e.exhibits.map(exhibitHtml).join("")}`, `msg ${cls}`);
+  },
+  screened(e) {
+    const el = document.getElementById(`ex-${e.id}`);
+    if (exhibits[e.id]) exhibits[e.id].status = e.status;
+    if (el) el.outerHTML = exhibitHtml({...(exhibits[e.id] || {id: e.id, title: "Exhibit A", point: ""}), status: e.status});
+    if (e.status === "excluded") add(`🚫 <b>Exhibit ${esc(e.id)} excluded</b> for tampering with the court: it tried to give the judge orders. (Otari prompt-injection guardrail)`, "note alert");
+  },
+  clerk(e) {
+    seat("");
+    const code = e.sandbox ? `<pre>${esc(e.code)}</pre><pre>${esc(e.stdout)}</pre>` : "";
+    add(`<div class="tag">Clerk <small>· ran it in Otari's code sandbox</small></div>
+         <div>${esc(e.question)}</div>${code}<div style="margin-top:6px">${esc(e.text)}</div>`, "msg clerk");
+  },
+  records(e) {
+    add(`📚 <b>The court consults the case files</b> (${esc(e.server)} via MCP): <i>${esc(e.output)}</i>`, "note");
+  },
+  adjourned(e) { add(`🔨 <b>Court adjourned.</b> ${esc(e.reason)}`, "note alert"); },
+  verdict(e) { seat("judge"); add(`<b>The judge has reached a verdict.</b>`, "note"); renderCard(e); history.replaceState(null, "", `/v/${e.case_no}`); },
+  denied(e) { add(`🚪 <b>The clerk shakes their head.</b> ${esc(e.reason)}`, "note alert"); },
+  left(e) { $("#left").textContent = `${e.trials_left} of ${status.daily_trials} trials left today`; },
+  error(e) { add(`⚠️ ${esc(e.message)}`, "note alert"); },
+};
+
+function renderCard(v) {
+  const models = Object.entries(v.models || {}).map(([r, m]) => `${r.replace("_", " ")}: ${esc(short(m))}`).join(" · ");
+  const keyEx = (v.key_exhibits || []).map((x) => exhibitHtml({...x, status: ""})).join("");
+  const excl = (v.excluded || []).length ? `<h3>Excluded</h3>${v.excluded.map((x) => exhibitHtml(x)).join("")}` : "";
+  $("#cardSlot").innerHTML = `<div class="card">
+    <div class="case serif">SMALL CLAIMS · CASE No. ${esc(v.case_no)}${v.mode === "demo" ? " · DEMO" : ""}</div>
+    <div class="c serif">“${esc(v.claim)}”</div>
+    <span class="ruling r-${esc(v.ruling)}">${esc(v.ruling)}</span>${v.provisional ? ` <small>(provisional)</small>` : ""}
+    <div class="headline serif">${esc(v.headline)}</div>
+    <div class="opinion">${esc(v.opinion)}</div>
+    <h3>Key evidence</h3>${keyEx || "<p>None admitted.</p>"}${excl}
+    <div class="foot"><span>Cost: $${Number(v.cost).toFixed(4)}${v.downgraded ? " · public defender appointed" : ""}</span><span>${models}</span></div>
+    <div class="actions">
+      <button class="primary" style="padding:10px 16px" id="share">Share verdict</button>
+      <button class="ghost" id="again">New case</button>
+    </div>
+    <details id="rec"><summary>Court record: every Otari call in this trial</summary><div>Loading…</div></details>
+  </div>`;
+  $("#share").onclick = async () => {
+    const url = `${location.origin}/v/${v.case_no}`;
+    try { await navigator.clipboard.writeText(url); $("#share").textContent = "Link copied"; }
+    catch { prompt("Copy this link", url); }
+  };
+  $("#again").onclick = () => { history.replaceState(null, "", "/"); location.reload(); };
+  $("#rec").ontoggle = async () => {
+    const r = await fetch(`/api/record/${v.case_no}`);
+    const body = $("#rec div");
+    if (!r.ok) { body.textContent = "No record kept for this case."; return; }
+    const rec = await r.json();
+    const rows = rec.calls.map((c) => {
+      const tools = (c.response.tool_calls || []).map((t) => t.type).join(", ");
+      const g = c.headers["otari-guardrails"] ? "guardrail" : "";
+      const cost = c.response.usage && c.response.usage.cost_usd ? `$${c.response.usage.cost_usd}` : "";
+      return `<tr><td>${esc(c.call)}</td><td>${c.status}</td><td>${esc(short(c.request.model || ""))}</td><td>${esc([tools, g].filter(Boolean).join(", "))}</td><td>${cost}</td></tr>`;
+    }).join("");
+    const f = Object.entries(rec.features).filter(([, on]) => on).map(([k]) => k).join(" · ");
+    body.innerHTML = `${rec.mode === "demo" ? "<p><b>Demo mode:</b> these calls went to the offline stand-in, not otari.ai.</p>" : ""}
+      <p>Features exercised: ${esc(f)}</p><table>${rows}</table>`;
+  };
+}
+
+async function file() {
+  const claim = $("#claim").value.trim();
+  if (!claim) return;
+  $("#home").classList.add("hidden"); $("#trial").classList.remove("hidden");
+  $("#feed").innerHTML = ""; $("#cardSlot").innerHTML = ""; exhibits = {};
+  window.scrollTo({top: 0});
+  const res = await fetch("/api/trial", {method: "POST", headers: {"Content-Type": "application/json"},
+                                         body: JSON.stringify({claim, visitor: visitorSel.value})});
+  const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+  for (;;) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, {stream: true});
+    let i;
+    while ((i = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, i); buf = buf.slice(i + 1);
+      if (!line.trim()) continue;
+      const ev = JSON.parse(line);
+      (handlers[ev.type] || (() => {}))(ev);
+    }
+  }
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+}
+
+async function loadShared() {
+  const m = location.pathname.match(/^\/v\/([A-F0-9]{6})$/);
+  if (!m) return;
+  const r = await fetch(`/api/verdict/${m[1]}`);
+  if (!r.ok) return;
+  const v = await r.json();
+  $("#home").classList.add("hidden"); $("#trial").classList.remove("hidden");
+  document.querySelector(".bench").classList.add("hidden"); document.querySelector(".fee").classList.add("hidden");
+  $("#caseno").textContent = ""; $("#docketClaim").textContent = "";
+  renderCard(v);
+}
+refresh().then(loadShared);
+</script>
+</body>
+</html>
