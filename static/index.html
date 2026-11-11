@@ -22,7 +22,8 @@
   header { text-align: center; padding: 40px 0 12px; }
   header .seal { font-size: 40px; }
   header h1 { margin: 4px 0 0; font-size: 44px; letter-spacing: .5px; }
-  header p { margin: 6px 0 0; color: var(--muted); font-size: 18px; }
+  header p { margin: 6px 0 0; color: var(--ink); font-size: 20px; }
+  header p.sub { color: var(--muted); font-size: 16px; }
   form { display: flex; gap: 8px; margin: 24px 0 12px; }
   #claim { flex: 1; font-size: 17px; padding: 14px 16px; border: 2px solid var(--wood);
            border-radius: 12px; background: #fff; color: var(--ink); min-width: 0; }
@@ -33,7 +34,13 @@
   .chip { background: #fff; border: 1px solid var(--line); padding: 8px 12px;
           border-radius: 999px; font-size: 14px; color: var(--ink); }
   .chip:hover { border-color: var(--wood); }
-  .how { margin: 28px auto 0; color: var(--muted); font-size: 14px; text-align: center; max-width: 560px; }
+  .explain { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 32px 0 0; }
+  .step { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 10px;
+          display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+  .step span:last-child { color: var(--muted); font-size: 14px; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; margin-bottom: 6px; }
+  .dot.pros { background: var(--pros); } .dot.def { background: var(--def); } .dot.judge { background: var(--judge); }
+  .how { margin: 18px auto 0; color: var(--muted); font-size: 14px; text-align: center; max-width: 560px; }
 
   .bench { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 24px 0 8px; }
   .seat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px;
@@ -81,12 +88,14 @@
   pre { background: #1f1a14; color: #f3e9d8; border-radius: 10px; padding: 10px; overflow-x: auto;
         font-size: 13px; margin: 8px 0 0; }
 
-  .card { background: #fffdf8; border: 2px solid var(--wood); border-radius: 18px; padding: 24px;
+  .card { scroll-margin-top: 56px; background: #fffdf8; border: 2px solid var(--wood); border-radius: 18px; padding: 24px;
           margin-top: 24px; position: relative; overflow: hidden; animation: up .5s ease; }
   .card .case { color: var(--muted); font-size: 13px; letter-spacing: 1px; }
   .card .c { font-size: 20px; margin: 6px 0 14px; }
-  .ruling { display: inline-block; font: 800 34px/1 Georgia, serif; letter-spacing: 3px;
-            padding: 8px 16px; border: 4px solid; border-radius: 8px; transform: rotate(-4deg); }
+  .ruling { display: inline-block; font: 800 44px/1 Georgia, serif; letter-spacing: 4px;
+            padding: 10px 20px; border: 5px solid; border-radius: 10px; transform: rotate(-5deg);
+            animation: stamp .45s cubic-bezier(.2,1.6,.4,1) both; }
+  @keyframes stamp { from { opacity: 0; transform: rotate(-5deg) scale(2.4); } to { opacity: 1; transform: rotate(-5deg) scale(1); } }
   .r-TRUE { color: #2f7d3a; } .r-FALSE { color: var(--pros); }
   .r-MISLEADING { color: #b9741c; } .r-UNPROVEN { color: var(--muted); }
   .card .headline { font-size: 22px; margin: 18px 0 6px; }
@@ -106,6 +115,7 @@
   footer select { font: inherit; border-radius: 8px; border: 1px solid var(--line); padding: 2px 6px; }
   .hidden { display: none !important; }
   @media (max-width: 560px) {
+    .explain { gap: 6px; } .step { padding: 10px 4px; font-size: 13px; } .step span:last-child { font-size: 12px; }
     header h1 { font-size: 34px; } form { flex-direction: column; } .primary { padding: 14px; }
     .bench { gap: 4px; } .seat { padding: 6px; font-size: 11px; } .seat .who { font-size: 13px; }
     .msg { max-width: 96%; } .docket .claim { font-size: 20px; } .ruling { font-size: 28px; }
@@ -119,6 +129,7 @@
     <div class="seal">⚖️</div>
     <h1 class="serif">Small Claims</h1>
     <p>Put any sentence from the internet on trial.</p>
+    <p class="sub">Paste a claim. Two AI lawyers fight over it. An AI judge decides if it's true.</p>
   </header>
 
   <section id="home">
@@ -127,8 +138,12 @@
       <button class="primary" id="go">File the case</button>
     </form>
     <div class="examples" id="examples"></div>
-    <p class="how">The prosecution argues it's false. The defense argues it's true. Both bring evidence from the web.
-      The judge rules. Three different open-weight models, about a minute, a few cents.</p>
+    <div class="explain">
+      <div class="step"><span class="dot pros"></span><b>Prosecution</b><span>argues it's false</span></div>
+      <div class="step"><span class="dot def"></span><b>Defense</b><span>argues it's true</span></div>
+      <div class="step"><span class="dot judge"></span><b>Judge</b><span>rules, with receipts</span></div>
+    </div>
+    <p class="how">Three AI models, each from a different open-weight family, search the web, argue it out, and hand you a verdict card you can share. About a minute, a few cents.</p>
   </section>
 
   <section id="trial" class="hidden">
@@ -274,10 +289,11 @@ function renderCard(v) {
     <div class="foot"><span>Cost: $${Number(v.cost).toFixed(4)}${v.downgraded ? " · public defender appointed" : ""}</span><span>${models}</span></div>
     <div class="actions">
       <button class="primary" style="padding:10px 16px" id="share">Share verdict</button>
-      <button class="ghost" id="again">New case</button>
+      <button class="ghost" id="again">Put your own claim on trial</button>
     </div>
     <details id="rec"><summary>Court record: every Otari call in this trial</summary><div>Loading…</div></details>
   </div>`;
+  setTimeout(() => $("#cardSlot .card").scrollIntoView({behavior: "smooth", block: "start"}), 150);
   $("#share").onclick = async () => {
     const url = `${location.origin}/v/${v.case_no}`;
     try { await navigator.clipboard.writeText(url); $("#share").textContent = "Link copied"; }

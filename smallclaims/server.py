@@ -11,6 +11,7 @@ import json
 import os
 import re
 import threading
+from html import escape
 from datetime import date
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -112,11 +113,26 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, obj, status=200):
         self._send(status, json.dumps(obj).encode())
 
+    def _page(self, path: str) -> bytes:
+        """The one page; a shared verdict link gets its own title and preview text."""
+        html = INDEX.read_text(encoding="utf-8")
+        m = re.fullmatch(r"/v/([A-F0-9]{6})", path)
+        f = DATA / "verdicts" / f"{m.group(1)}.json" if m else None
+        if f and f.exists():
+            v = json.loads(f.read_text(encoding="utf-8"))
+            title = escape(f"{v['ruling']}: “{v['claim']}” | Small Claims")
+            desc = escape(v.get("headline", ""))
+            meta = (f'<meta property="og:title" content="{title}">'
+                    f'<meta property="og:description" content="{desc}">'
+                    f'<meta name="description" content="{desc}">')
+            html = re.sub(r"<title>.*?</title>", f"<title>{title}</title>{meta}", html, count=1)
+        return html.encode()
+
     def do_GET(self):
         path, _, query = self.path.partition("?")
         params = dict(p.split("=", 1) for p in query.split("&") if "=" in p)
         if path == "/" or path.startswith("/v/"):
-            return self._send(200, INDEX.read_bytes(), "text/html; charset=utf-8")
+            return self._send(200, self._page(path), "text/html; charset=utf-8")
         if path == "/api/status":
             visitor = clean_visitor(params.get("visitor", ""))
             return self._json({"mode": "demo" if self.court.mock else "live",
