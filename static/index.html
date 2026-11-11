@@ -270,7 +270,11 @@ const handlers = {
   },
   adjourned(e) { add(`🔨 <b>Court adjourned.</b> ${esc(e.reason)}`, "note alert"); },
   verdict(e) { seat("judge"); add(`<b>The judge has reached a verdict.</b>`, "note"); renderCard(e); history.replaceState(null, "", `/v/${e.case_no}`); },
-  denied(e) { add(`🚪 <b>The clerk shakes their head.</b> ${esc(e.reason)}`, "note alert"); },
+  denied(e) {
+    document.querySelector(".bench").classList.add("hidden"); document.querySelector(".fee").classList.add("hidden");
+    $("#caseno").textContent = "FILING REFUSED";
+    add(`🚪 <b>The clerk shakes their head.</b> ${esc(e.reason)}<br><small>Each visitor is an Otari end user with their own daily budget. Try another visitor below.</small>`, "note alert");
+  },
   left(e) { $("#left").textContent = `${e.trials_left} of ${status.daily_trials} trials left today`; },
   error(e) { add(`⚠️ ${esc(e.message)}`, "note alert"); },
 };
@@ -322,6 +326,8 @@ async function file() {
   if (!claim) return;
   $("#home").classList.add("hidden"); $("#trial").classList.remove("hidden");
   $("#feed").innerHTML = ""; $("#cardSlot").innerHTML = ""; exhibits = {};
+  document.querySelector(".bench").classList.remove("hidden"); document.querySelector(".fee").classList.remove("hidden");
+  $("#caseno").textContent = "FILING…"; $("#docketClaim").textContent = `“${claim}”`;
   window.scrollTo({top: 0});
   const res = await fetch("/api/trial", {method: "POST", headers: {"Content-Type": "application/json"},
                                          body: JSON.stringify({claim, visitor: visitorSel.value})});
