@@ -25,7 +25,7 @@ Built for MozFest **Developers Wilding: Online** on the hosted
 | For claims about software, the judge **consults the case files** | MCP (DeepWiki, `mcp_servers`) |
 | If counsel's model doesn't show up, **substitute counsel takes the floor**, and the page says who | Routing and fallbacks (a substitute list per role, or an Otari routing policy; `Otari-Model` / `Otari-Attempt-Count` say who answered) |
 | Each trial has a **filing fee** bar from Otari's own per-request cost. At 80% the defense gets a **public defender** (a cheaper model); at 100%, or when Otari answers `budget_exceeded`, court adjourns with a provisional ruling | Budgets and spending limits (`usage.cost_usd`, `403 budget_exceeded`) |
-| Each visitor is an Otari end user (`user` on every call) with their own daily budget; when one runs out, others keep going | Per-user budgets (service key + end-user budgets) |
+| Each visitor is an Otari end user (`user` on every call). With a service key and end-user budgets, Otari holds each visitor to their own budget and a refusal turns only that visitor away. The app also caps filings per visitor per day (3), which is what the demo shows | Per-user budgets (service key + end-user budgets) |
 
 Every verdict card has a **court record**: the list of Otari calls behind the
 trial, with the model, the tools and the cost of each.
