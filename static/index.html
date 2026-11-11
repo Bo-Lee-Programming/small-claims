@@ -219,7 +219,10 @@ const handlers = {
     bar.classList.toggle("warn", e.pct >= 80 && e.pct < 100);
     bar.classList.toggle("full", e.pct >= 100);
   },
-  fetched(e) { add(`📄 The court reads the page into the record as <b>Exhibit A</b>: ${esc(e.title)} <small>(${e.chars} characters, via Otari web fetch)</small>`, "note"); },
+  fetched(e) {
+    exhibits.A = {id: "A", side: "court", title: e.title, url: e.url, point: `The page itself, ${e.chars} characters, read via Otari web fetch.`, status: "pending"};
+    add(`📄 The court reads the page into the record as <b>Exhibit A</b>, and screens it before either side may see it.${exhibitHtml(exhibits.A)}`, "note");
+  },
   thinking(e) { seat(e.role); typing(`${e.title} is preparing…`); },
   substitute(e) {
     add(`🔁 <b>${esc(e.title)}</b>'s first choice, <code>${esc(short(e.failed))}</code>, didn't show up (${esc(e.reason)}). <b>Substitute counsel takes the floor:</b> <code>${esc(short(e.to))}</code>.`, "note alert");

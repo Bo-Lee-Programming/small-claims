@@ -56,6 +56,15 @@ class CourtTest(unittest.TestCase):
         self.assertEqual(len(of(events, "adjourned")), 1)
         self.assertTrue(of(events, "verdict")[0]["provisional"])
 
+    def test_linked_page_with_injection_is_excluded_before_counsel_reads_it(self):
+        events, log = run("https://example.org/suspicious-page")
+        first = of(events, "screened")[0]
+        self.assertEqual((first["id"], first["status"]), ("A", "excluded"))
+        counsel = [c for c in log.entries
+                   if (c["request"].get("metadata") or {}).get("step") in ("prosecution", "defense")]
+        self.assertTrue(counsel)
+        self.assertEqual(of(events, "verdict")[0]["excluded"][0]["id"], "A")
+
     def test_every_call_names_the_visitor(self):
         _, log = run("Goldfish only have a three-second memory.")
         chats = [c for c in log.entries if c["call"].endswith("/chat/completions")]

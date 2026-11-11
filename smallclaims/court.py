@@ -183,6 +183,10 @@ class Trial:
         self.exhibits.append(Exhibit("A", "court", title, reply.body.get("final_url") or url,
                                      "The page itself, read into the record by Otari web fetch."))
         yield self._ev("fetched", url=url, title=title, chars=len(self.page_text))
+        # The page is screened before either side may read it.
+        yield from self._screen_one(self.exhibits[-1])
+        if self.exhibits[-1].status == "excluded":
+            self.page_text = ""
 
     def _counsel(self, side: str) -> Iterator[dict]:
         role = side
@@ -223,24 +227,26 @@ class Trial:
     def _screen(self) -> Iterator[dict]:
         """Every exhibit goes through Otari's prompt-injection guardrail, in block mode."""
         for ex in self.exhibits:
-            text = f"{ex.title}\n{ex.point}"
-            if ex.id == "A":
-                text += "\n" + self.page_text
-            try:
-                reply = self.client.chat(self.cast["clerk"][0],
-                                         [{"role": "user", "content": text}],
-                                         user=self.visitor, guardrails=[INJECTION_PROFILE],
-                                         metadata={"app": "small-claims", "step": "screening",
-                                                   "case": self.case_no}, max_tokens=1)
-                self.spent += reply.cost
-                verdicts = reply.guardrails
-                ran = any(v.get("status") == "evaluated" for v in verdicts)
-                ex.status = "admitted" if ran else "unscreened"
-            except OtariError as err:
-                if not err.guardrail_blocked:
-                    raise
-                ex.status = "excluded"
-            yield self._ev("screened", id=ex.id, status=ex.status)
+            if ex.status == "pending":
+                yield from self._screen_one(ex)
+
+    def _screen_one(self, ex: Exhibit) -> Iterator[dict]:
+        text = f"{ex.title}\n{ex.point}"
+        if ex.id == "A":
+            text += "\n" + self.page_text
+        try:
+            reply = self.client.chat(self.cast["clerk"][0], [{"role": "user", "content": text}],
+                                     user=self.visitor, guardrails=[INJECTION_PROFILE],
+                                     metadata={"app": "small-claims", "step": "screening",
+                                               "case": self.case_no}, max_tokens=1)
+            self.spent += reply.cost
+            ran = any(v.get("status") == "evaluated" for v in reply.guardrails)
+            ex.status = "admitted" if ran else "unscreened"
+        except OtariError as err:
+            if not err.guardrail_blocked:
+                raise
+            ex.status = "excluded"
+        yield self._ev("screened", id=ex.id, status=ex.status)
 
     def _clerk(self) -> Iterator[dict]:
         question = self.numbers

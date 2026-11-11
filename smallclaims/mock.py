@@ -9,6 +9,7 @@ are scripted per example claim; nothing here is a model. The page shows a
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 INJECTION_MARKERS = ("ignore previous instructions", "ignore all previous instructions")
 
@@ -124,6 +125,8 @@ GENERIC = {
     "judge": _judge("UNPROVEN", "Demo mode can't try this one. Add an Otari key for a real trial.",
                     "In demo mode only the three example claims have real scripts.", ["P1", "D1"]),
 }
+SUSPICIOUS_PAGE = (Path(__file__).resolve().parent.parent / "examples" / "suspicious-page.md"
+                   ).read_text(encoding="utf-8")
 CLERK = {"code": "day = 243.0\nyear = 224.7\nprint(f'day - year = {day - year:.1f} Earth days')",
          "stdout": "day - year = 18.3 Earth days\n",
          "text": "A Venus day (243.0 Earth days) is 18.3 days longer than its year (224.7)."}
@@ -148,11 +151,13 @@ class MockOtari:
         if path == "/key/budget":
             return self._json({"budgets_enforced": True, "remaining_usd": 2.0})
         if path == "/fetch":
+            text = "This is a scripted page used in demo mode."
+            if "suspicious" in payload["url"]:
+                text = SUSPICIOUS_PAGE
             return self._json({"object": "fetch", "fetch_tool": "builtin_fetch",
                                "url": payload["url"], "final_url": payload["url"],
                                "title": "A page on trial (demo mode)", "truncated": False,
-                               "text": "This is a scripted page used in demo mode."},
-                              usage_cost=0.001)
+                               "text": text}, usage_cost=0.001)
         if path == "/chat/completions":
             return self._chat(payload)
         return self._json({"detail": f"mock has no route {path}"}, 404)
