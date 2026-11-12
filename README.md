@@ -25,7 +25,7 @@ Built for MozFest **Developers Wilding: Online** on the hosted
 | For claims about software, the judge **consults the case files** | MCP (DeepWiki, `mcp_servers`) |
 | If counsel's model doesn't show up, **substitute counsel takes the floor**, and the page says who | Routing and fallbacks (a substitute list per role, or an Otari routing policy; `Otari-Model` / `Otari-Attempt-Count` say who answered) |
 | Each trial has a **filing fee** bar from Otari's own per-request cost. At 80% the defense gets a **public defender** (a cheaper model); at 100%, or when Otari answers `budget_exceeded`, court adjourns with a provisional ruling | Budgets and spending limits (`usage.cost_usd`, `403 budget_exceeded`) |
-| Each visitor is an Otari end user (`user` on every call). With a service key and end-user budgets, Otari holds each visitor to their own budget and a refusal turns only that visitor away. The app also caps filings per visitor per day (3), which is what the demo shows | Per-user budgets (service key + end-user budgets) |
+| Each visitor has an app-level daily filing limit (shown in the offline demo). For Otari-enforced per-user budgets, a service key and end-user budget setup are required; only then enable forwarding visitor IDs with `send_otari_user: true` in the local config | Per-user budgets (service key + end-user budgets) |
 
 Every verdict card has a **court record**: the list of Otari calls behind the
 trial, with the model, the tools and the cost of each.
@@ -33,10 +33,17 @@ trial, with the model, the tools and the cost of each.
 ## Where it stands
 
 <!-- Keep this honest: update it from a live court record before claiming more. -->
-Everything in the table above is wired into the app and covered by offline
-tests. **So far it has only run in demo mode** (an offline stand-in for the
-Otari API, labelled on every screen and card); the screenshots are demo mode.
-It has not yet been run against otari.ai.
+Everything in the table above has code paths and scripted offline tests.
+**The screenshots and 3:05 submission video are an offline stand-in for the
+Otari API (clearly labelled DEMO); they are not live-feature evidence.**
+
+On 2026-11-11, we authenticated to **hosted otari.ai**, listed 174 models,
+retrieved the available tools and guardrail profiles, and made a successful
+real OpenAI-compatible chat completion using Qwen3-30B-A3B-Instruct-2507
+(cost approximately $0.000003). A first attempted live courtroom case
+failed because web search was disabled for the new workspace; web search
+was then enabled. **End-to-end live courtroom execution and the remaining
+Otari feature categories have not yet been verified.**
 
 ## Run it
 
@@ -59,8 +66,15 @@ right family. Override the cast, or use your own routing policy names, in
 `config.local.json`:
 
 ```json
-{"cast": {"defense": ["court-defense"]}, "end_user_budget": null}
+{"cast": {"defense": ["court-defense"]}, "end_user_budget": null, "send_otari_user": false}
 ```
+
+For normal personal Otari API keys, the app leaves the `user` request field
+out; the hosted API rejects an arbitrary visitor ID with HTTP 403 for such
+keys. Only service keys configured for end-user budgets should enable
+`send_otari_user`. On some Windows MSYS Python installations, an additional
+trusted CA bundle must be selected via `SSL_CERT_FILE` to avoid certificate
+verification failures. Never put API keys into version-controlled files.
 
 Options: `--port 8812`, `--daily-trials 3`, `--fee-cap 0.05`.
 

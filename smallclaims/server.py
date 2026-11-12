@@ -28,7 +28,7 @@ FAMILIES = {"prosecution": ("qwen", "llama", "gemma", "mistral"),
             "defense": ("deepseek", "kimi", "qwen"),
             "judge": ("glm", "kimi", "gpt-oss", "llama"),
             "clerk": ("qwen", "llama", "gemma"),
-            "public_defender": ("gemma", "llama", "qwen", "mistral")}
+            "public_defender": ("qwen", "llama", "mistral", "gemma")}
 EXAMPLES = ["Goldfish only have a three-second memory.",
             "Otari can route to more than 40 LLM providers through one endpoint.",
             "A day on Venus is longer than its year."]
@@ -63,6 +63,9 @@ class Court:
             config = json.loads((ROOT / "config.local.json").read_text(encoding="utf-8"))
         self.cast = {**DEFAULT_CAST, **config.get("cast", {})}
         self.end_user_budget = config.get("end_user_budget")
+        # Hosted personal API keys reject arbitrary visitor IDs in the user field.
+        # Only service keys configured for end-users should forward user IDs.
+        self.send_otari_user = bool(config.get("send_otari_user", False))
         if not self.mock:
             try:
                 ids = [m.get("id", "") for m in self.client(EvidenceLog()).models().body.get("data", [])]
@@ -77,7 +80,8 @@ class Court:
             log.inner = MockOtari()
             return OtariClient(api_key="mock", transport=log)
         log.inner = urllib_transport
-        return OtariClient(transport=log, end_user_budget=self.end_user_budget)
+        return OtariClient(transport=log, end_user_budget=self.end_user_budget,
+                           send_user=self.send_otari_user)
 
     def trials_left(self, visitor: str) -> int:
         return max(0, self.daily_trials - self.filed.get((visitor, date.today().isoformat()), 0))

@@ -100,11 +100,13 @@ class Reply:
 
 class OtariClient:
     def __init__(self, base_url: str = DEFAULT_BASE_URL, api_key: str | None = None,
-                 transport: Transport | None = None, end_user_budget: str | None = None):
+                 transport: Transport | None = None, end_user_budget: str | None = None,
+                 send_user: bool = True):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key if api_key is not None else os.environ.get("OTARI_API_KEY", "")
         self.transport = transport or urllib_transport
         self.end_user_budget = end_user_budget
+        self.send_user = send_user
 
     # -- plumbing ---------------------------------------------------------
     def request(self, method: str, path: str, body: dict | None = None,
@@ -137,7 +139,7 @@ class OtariClient:
              temperature: float = 0.1, max_tokens: int = 1500) -> Reply:
         body: dict = {"model": model, "messages": messages,
                       "temperature": temperature, "max_tokens": max_tokens}
-        for key, value in (("user", user), ("tools", tools), ("guardrails", guardrails),
+        for key, value in (("user", user if self.send_user else None), ("tools", tools), ("guardrails", guardrails),
                            ("mcp_servers", mcp_servers), ("metadata", metadata)):
             if value:
                 body[key] = value
@@ -145,13 +147,13 @@ class OtariClient:
 
     def fetch(self, url: str, *, user: str | None = None, max_chars: int = 40000) -> Reply:
         body = {"url": url, "max_chars": max_chars}
-        if user:
+        if user and self.send_user:
             body["user"] = user
         return self.request("POST", "/fetch", body)
 
     def execute(self, code: str, *, user: str | None = None, timeout_seconds: int = 30) -> Reply:
         body = {"code": code, "timeout_seconds": timeout_seconds}
-        if user:
+        if user and self.send_user:
             body["user"] = user
         return self.request("POST", "/code/execute", body)
 
